@@ -1,0 +1,55 @@
+/* src/styles/App.css */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f9f9f9;
+}
+
+.header {
+  background-color: #6200ea;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+.card {
+  background: white;
+  margin: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card.quero-estudar {
+  border-left: 5px solid orange;
+}
+.card.em-andamento {
+  border-left: 5px solid blue;
+}
+.card.concluído {
+  border-left: 5px solid green;
+}
+
+.progress-container {
+  margin: 1rem;
+  background: #ddd;
+  border-radius: 8px;
+  height: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #6200ea;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .card {
+    font-size: 14px;
+    padding: 0.5rem;
+  }
+
+  .header h1 {
+    font-size: 20px;
+  }
+}
