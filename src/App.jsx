@@ -3,6 +3,8 @@ import { supabase } from "./services/supabaseClient";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import ResetPassword from "./pages/ResetPassword";
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("login");
@@ -14,20 +16,33 @@ export default function App() {
         setView("dashboard");
       }
     });
+
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === "PASSWORD_RECOVERY") {
+        setView("reset-password");
+        return;
+      }
       if (session?.user) {
         setUser(session.user);
         setView("dashboard");
+
         const id = session.user.id;
         const name = session.user.user_metadata?.name || session.user.email;
-        supabase.from("profiles").select("id").eq("id", id).then(({ data }) => {
-          if (!data || data.length === 0) supabase.from("profiles").upsert({ id, name });
-        });
+
+        supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", id)
+          .then(({ data }) => {
+            if (!data || data.length === 0)
+              supabase.from("profiles").upsert({ id, name });
+          });
       } else {
         setUser(null);
         setView("login");
       }
     });
+
     const subscription = data?.subscription;
     return () => subscription?.unsubscribe();
   }, []);
@@ -44,6 +59,7 @@ export default function App() {
       {view === "register" && <Register goTo={setView} />}
       {view === "dashboard" && user && <Dashboard user={user} onLogout={handleLogout} />}
       {view === "dashboard" && !user && <Login onLogin={setUser} goTo={setView} />}
+      {view === "reset-password" && <ResetPassword goTo={setView} />}
     </>
   );
 }
