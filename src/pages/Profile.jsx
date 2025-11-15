@@ -1,4 +1,3 @@
-// pages/Profile.js
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -19,8 +18,7 @@ export default function Profile({ user, onBack }) {
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-
+  const [message, setMessage] = useState({ type: '', text: '' }); 
   useEffect(() => {
     if (user) {
       setProfile(prev => ({
@@ -63,7 +61,6 @@ export default function Profile({ user, onBack }) {
     setMessage({ type: '', text: '' });
 
     try {
-      // Atualizar perfil
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({ 
@@ -72,8 +69,6 @@ export default function Profile({ user, onBack }) {
         });
 
       if (profileError) throw profileError;
-
-      // Atualizar metadata do usuário
       const { error: authError } = await supabase.auth.updateUser({
         data: { name: profile.name.trim() }
       });
@@ -199,17 +194,7 @@ export default function Profile({ user, onBack }) {
 
         <Divider sx={{ my: 3 }} />
 
-        <Box>
-          <Typography variant="h6" gutterBottom color="text.secondary">
-            Informações da Conta
-          </Typography>
-          <Typography variant="body2">
-            ID: {user.id}
-          </Typography>
-          <Typography variant="body2">
-            Último login: {new Date(user.last_sign_in_at).toLocaleString()}
-          </Typography>
-        </Box>
+       
       </Paper>
     </Container>
   );

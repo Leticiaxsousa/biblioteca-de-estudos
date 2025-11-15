@@ -1,6 +1,5 @@
 
-
-export { default as AppButton } from './AppButton';
+export { default as Button } from './Button';
 export { default as TextField } from './TextField';
 export { default as Card } from './Card';
 export { default as CardContent } from './CardContent';

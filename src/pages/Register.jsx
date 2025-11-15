@@ -1,205 +1,110 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress
-} from '@mui/material';
-import { supabase } from '../services/supabaseClient';
-export default function Register({ goTo }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+import React, { useState } from "react";
+import { Box, Button, TextField, Typography, Paper } from "@mui/material";
+import { supabase } from "../services/supabaseClient";
+
+const Register = ({ goTo }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
 
-  const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-
-    if (!formData.name.trim()) {
-      setError('Nome é obrigatório');
-      return;
-    }
-
+  const handleRegister = async () => {
     setLoading(true);
+    setError("");
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email.trim(),
-        password: formData.password,
-        options: {
-          data: {
-            name: formData.name.trim()
-          }
-        }
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
       });
-      if (error) throw error;
-      if (data?.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert([
-            { 
-              id: data.user.id, 
-              name: formData.name.trim() 
-            }
-          ]);
 
-        if (profileError) console.error('Erro ao criar perfil:', profileError);
-      }
-      setSuccess('Conta criada com sucesso! Você já pode fazer login.');
-      setTimeout(() => {
-        goTo('login');
-      }, 2000);
+      if (signUpError) throw signUpError;
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
+      if (signInError) throw signInError;
+
+      const user = signInData.user;
+      if (!user) throw new Error("Falha ao obter usuário logado");
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .insert([{ id: user.id, name }]);
+
+      if (profileError) throw profileError;
+
+      console.log("Profile criado com sucesso:", profileData);
+      goTo("dashboard"); 
     } catch (err) {
-      setError(err.message || 'Erro ao criar conta');
+      console.error("Erro ao registrar:", err);
+      setError(err.message || "Erro desconhecido");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          py: 4
-        }}
-      >
-        <Paper
-          elevation={8}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-            maxWidth: 400
-          }}
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="100vh"
+      bgcolor="#f4f6f8"
+      px={2}
+    >
+      <Paper elevation={4} sx={{ p: 4, width: "100%", maxWidth: 400 }}>
+        <Typography variant="h5" gutterBottom align="center">
+          Registrar
+        </Typography>
+
+        {error && (
+          <Typography color="error" align="center">
+            {error}
+          </Typography>
+        )}
+
+        <TextField
+          label="Nome"
+          fullWidth
+          margin="normal"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <TextField
+          label="E-mail"
+          type="email"
+          fullWidth
+          margin="normal"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <TextField
+          label="Senha"
+          type="password"
+          fullWidth
+          margin="normal"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          sx={{ mt: 2 }}
+          onClick={handleRegister}
+          disabled={loading}
         >
-          <Typography component="h1" variant="h4" gutterBottom color="primary">
-           Biblioteca de Estudos
-          </Typography>
-          <Typography variant="h5" gutterBottom>
-            Criar Conta
-          </Typography>
-          
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          {loading ? "Registrando..." : "Registrar"}
+        </Button>
 
-          {success && (
-            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-              {success}
-            </Alert>
-          )}
-
-          <Box component="form" onSubmit={handleRegister} sx={{ mt: 1, width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="name"
-              label="Nome Completo"
-              name="name"
-              autoComplete="name"
-              autoFocus
-              value={formData.name}
-              onChange={handleChange}
-              disabled={loading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="E-mail"
-              name="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={loading}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Senha"
-              type="password"
-              id="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-              helperText="Mínimo 6 caracteres"
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirmar Senha"
-              type="password"
-              id="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              disabled={loading}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-              size="large"
-            >
-              {loading ? <CircularProgress size={24} /> : 'Criar Conta'}
-            </Button>
-            
-            <Box sx={{ textAlign: 'center' }}>
-              <Button 
-                onClick={() => goTo('login')}
-                disabled={loading}
-              >
-                Já tem conta? Faça login
-              </Button>
-            </Box>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+        <Button fullWidth sx={{ mt: 1 }} onClick={() => goTo("login")}>
+          Já tenho conta
+        </Button>
+      </Paper>
+    </Box>
   );
-}
+};
+
+export default Register;

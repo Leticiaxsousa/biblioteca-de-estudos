@@ -1,87 +1,87 @@
-import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Box,
-  Typography,
-  IconButton
-} from '@mui/material';
+import React, { useState, useEffect } from 'react'; 
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, IconButton } from '@mui/material';
 import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useGoals } from '../../hooks/useGoals';
 import GoalForm from './GoalForm';
 import GoalCard from './GoalCard';
+import { useStudyGoals } from '../../hooks/useStudyGoals';
 
-export default function GoalsModal({ open, onClose, user }) {
-  const { goals, addGoal, updateGoal, deleteGoal } = useGoals(user?.id);
+export default function GoalsModal({ open, onClose, user, contents, onSaved }) {
+ const { goals, loading, addGoal, updateGoal, deleteGoal, refetch } = useStudyGoals(
+  open ? user?.id : null,      
+  open ? contents : []         
+);
+
   const [showForm, setShowForm] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null);
-  const handleGoalSaved = () => {
-    setShowForm(false);
-    setEditingGoal(null);
-  };
-  const handleEditGoal = (goal) => {
-    setEditingGoal(goal);
+  const [editing, setEditing] = useState(null);
+
+const handleDelete = async (id) => {
+  await deleteGoal(id); 
+  onSaved?.();          
+};
+
+  const handleNew = () => {
+    setEditing(null);
     setShowForm(true);
   };
+
+  const handleSaved = () => {
+    setShowForm(false);
+    setEditing(null);
+    refetch();
+    onSaved?.(); 
+  };
+
+useEffect(() => {
+    if (open) {
+      setShowForm(false);
+      setEditing(null);
+    }
+  }, [open]);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6">Gerenciar Metas</Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
+          <IconButton onClick={onClose}><CloseIcon /></IconButton>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         {showForm ? (
           <GoalForm
-            user={user}
-            initial={editingGoal}
-            onSaved={handleGoalSaved}
-            onClose={() => {
-              setShowForm(false);
-              setEditingGoal(null);
-            }}
+            initial={editing}
+            onSaved={handleSaved}
+            onClose={() => { setShowForm(false); setEditing(null); }}
+            addGoal={addGoal}
+            updateGoal={updateGoal}
+            contents={contents}
           />
         ) : (
           <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="h6">Minhas Metas</Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setShowForm(true)}
-              >
-                Nova Meta
-              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={handleNew}>Nova Meta</Button>
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {goals.map(goal => (
+            {loading ? (
+              <Typography>Carregando...</Typography>
+            ) : goals.length === 0 ? (
+              <Box textAlign="center" py={4}><Typography color="text.secondary">Nenhuma meta cadastrada</Typography></Box>
+            ) : (
+              goals.map(g => (
                 <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  onEdit={handleEditGoal}
-                  onDelete={deleteGoal}
+                  key={g.id}
+                  goal={g}
+                  onEdit={(goal) => { setEditing(goal); setShowForm(true); }}
+                  onDelete={handleDelete}
                 />
-              ))}
-              
-              {goals.length === 0 && (
-                <Box textAlign="center" py={4}>
-                  <Typography color="text.secondary">
-                    Nenhuma meta cadastrada
-                  </Typography>
-                </Box>
-              )}
-            </Box>
+              ))
+            )}
           </>
         )}
       </DialogContent>
+
       {!showForm && (
         <DialogActions>
           <Button onClick={onClose}>Fechar</Button>

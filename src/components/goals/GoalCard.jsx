@@ -1,90 +1,48 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  LinearProgress,
-  IconButton,
-  Box,
-  Chip
-} from '@mui/material';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import { getGoalTypeByKey } from '../../utils/goalTypes';
+import { Card, CardContent, Typography, LinearProgress, IconButton, Box, Chip } from '@mui/material';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 export default function GoalCard({ goal, onEdit, onDelete }) {
-  const goalType = getGoalTypeByKey(goal.type);
-  const today = new Date();
-  const periodEnd = new Date(goal.period_end);
-  const getStatusColor = () => {
-    if (goal.status === 'completed') return 'success';
-    if (goal.status === 'failed') return 'error';
-    if (goal.days_remaining <= 2) return 'warning';
-    return 'primary';
-  };
-  const getStatusText = () => {
-    if (goal.status === 'completed') return 'Concluída ';
-    if (goal.status === 'failed') return 'Não alcançada ';
-    if (goal.days_remaining === 0) return 'Termina hoje!';
-    if (goal.days_remaining === 1) return '1 dia restante';
-    return `${goal.days_remaining} dias restantes`;
+  const progress = goal.progress ?? 0;
+
+  const chip = () => {
+    if (progress >= 100) return <Chip label="Concluída" color="success" size="small" />;
+    if (goal.goal_type === 'content' && goal.daysRemaining !== null && goal.daysRemaining <= 2)
+      return <Chip label={goal.daysRemaining === 0 ? 'Vence hoje' : `${goal.daysRemaining} dias`} color="warning" size="small" />;
+    if (goal.goal_type === 'weekly') return <Chip label="Semanal" size="small" />;
+    if (goal.goal_type === 'monthly') return <Chip label="Mensal" size="small" />;
+    return <Chip label="Por Conteúdo" size="small" />;
   };
 
   return (
-    <Card sx={{ mb: 2 }}>
+    <Card variant="outlined" sx={{ mb: 2 }}>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-       
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography variant="h6">
-                {goalType.icon} {goal.title}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1">{goal.title}</Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {goal.goal_type === 'content'
+                ? goal.current_value ? 'Concluído' : 'Pendente'
+                : `${goal.current_value || 0} de ${goal.target_value}`}
+            </Typography>
+
+            <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4, mb: 1 }} />
+
+            <Typography variant="caption" color="text.secondary">{progress}%</Typography>
+
+            {goal.due_date && (
+              <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                Até {new Date(goal.due_date).toLocaleDateString()}
               </Typography>
-            </Box>
-            
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2">
-                  {goal.current_value} de {goal.target_value} {goalType.unit}
-                </Typography>
-                <Typography variant="body2" fontWeight="bold">
-                  {goal.progress}%
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={goal.progress}
-                color={getStatusColor()}
-                sx={{ height: 8, borderRadius: 4 }}
-              />
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Chip 
-                label={goalType.label}
-                size="small"
-                variant="outlined"
-              />
-              <Chip 
-                label={getStatusText()}
-                size="small"
-                color={getStatusColor()}
-              />
-              <Chip 
-                label={`Até ${new Date(goal.period_end).toLocaleDateString()}`}
-                size="small"
-                variant="outlined"
-              />
-            </Box>
+            )}
+
+            <Box sx={{ mt: 1 }}>{chip()}</Box>
           </Box>
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            <IconButton size="small" onClick={() => onEdit(goal)}>
-              <EditIcon />
-            </IconButton>
-            <IconButton size="small" onClick={() => onDelete(goal.id)} color="error">
-              <DeleteIcon />
-            </IconButton>
+
+          <Box>
+            <IconButton size="small" onClick={() => onEdit(goal)}><EditIcon /></IconButton>
+            <IconButton size="small" color="error" onClick={() => onDelete(goal.id)}><DeleteIcon /></IconButton>
           </Box>
         </Box>
       </CardContent>

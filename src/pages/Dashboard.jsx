@@ -24,7 +24,7 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import { useContents } from '../hooks/useContents';
-import { useGoals } from '../hooks/useGoals';
+import { useStudyGoals } from '../hooks/useStudyGoals';
 import ContentCard from '../components/content/ContentCard';
 import ContentFormModal from '../components/content/ContentFormModal';
 import GoalsModal from '../components/goals/GoalsModal';
@@ -281,16 +281,24 @@ export default function Dashboard({ user, onLogout }) {
     deleteContent, 
     markComplete 
   } = useContents(user?.id);
-  
-  const { goals, loading: goalsLoading } = useGoals(user?.id);
+   const { goals, loading: goalsLoading, refetch: refetchGoals } = useStudyGoals(user?.id, contents);
   const [selectedContent, setSelectedContent] = useState(null);
   const [showContentForm, setShowContentForm] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showTopicManager, setShowTopicManager] = useState(false);
+  const handleCloseGoals = () => {
+    setShowGoals(false);
+  };
+  const refetchDashboard = () => {
+  refetchGoals(); 
+};
+
+
+
   const handleContentSaved = () => {
     setShowContentForm(false);
     setSelectedContent(null);
+
   };
   const handleEditContent = (content) => {
     setSelectedContent(content);
@@ -386,9 +394,7 @@ export default function Dashboard({ user, onLogout }) {
 
       
           <Grid item xs={12} lg={4}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              
-            </Paper>
+           
             <Paper sx={{ p: 3, mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">
@@ -470,7 +476,7 @@ export default function Dashboard({ user, onLogout }) {
               <Button 
                 fullWidth 
                 variant="contained" 
-                onClick={() => setShowGoals(true)}
+                onClick={() =>  setShowGoals(true)}
                 startIcon={<AddIcon />}
                 sx={{ mt: 2 }}
               >
@@ -494,10 +500,12 @@ export default function Dashboard({ user, onLogout }) {
         updateContent={updateContent}     
       />
       <GoalsModal
-        open={showGoals}
-        onClose={() => setShowGoals(false)}
-        user={user}
-      />
+  open={showGoals}
+  onClose={handleCloseGoals}
+  user={user}
+  contents={contents}
+  onSaved={refetchDashboard} 
+/>
 
       <Dialog 
         open={showProfile} 

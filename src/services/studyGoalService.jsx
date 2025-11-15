@@ -1,30 +1,31 @@
 import { supabase } from './supabaseClient';
-export const goalService = {
-  getAll: (userId) => 
+
+export const studyGoalService = {
+  getAll: (userId) =>
     supabase
-      .from('goals')
+      .from('study_goals')
       .select('*')
       .eq('user_id', userId)
-      .order('period_end', { ascending: true })
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: true }),
 
-  create: (data) => 
+  create: (data) =>
     supabase
-      .from('goals')
+      .from('study_goals')
       .insert([data])
       .select()
       .single(),
-  update: (id, data) => 
+
+  update: (id, data) =>
     supabase
-      .from('goals')
+      .from('study_goals')
       .update(data)
       .eq('id', id)
       .select()
       .single(),
 
-  delete: (id) => 
+  delete: (id) =>
     supabase
-      .from('goals')
+      .from('study_goals')
       .delete()
       .eq('id', id)
 };

@@ -1,9 +1,48 @@
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Paper } from "@mui/material";
 import { supabase } from "../services/supabaseClient";
+
 const Login = ({ onLogin, goTo }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Preencha e-mail e senha.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert("Erro ao logar: " + error.message);
+      return;
+    }
+
+    onLogin(data.user);
+    goTo("dashboard");
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      alert("Digite seu e-mail para recuperar a senha.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) {
+      alert("Erro ao enviar recuperação: " + error.message);
+      return;
+    }
+
+    alert("E-mail de recuperação enviado!");
+  };
 
   return (
     <Box
@@ -42,7 +81,7 @@ const Login = ({ onLogin, goTo }) => {
           variant="contained"
           color="primary"
           sx={{ mt: 2 }}
-          onClick={() => onLogin({ email })}
+          onClick={handleLogin}
         >
           Entrar
         </Button>
@@ -50,31 +89,8 @@ const Login = ({ onLogin, goTo }) => {
         <Button fullWidth sx={{ mt: 1 }} onClick={() => goTo("register")}>
           Criar conta
         </Button>
-        <Button
-          fullWidth
-          sx={{ mt: 1 }}
-          onClick={async () => {
-            if (!email) {
-              alert("Digite seu e-mail para recuperar a senha.");
-              return;
-            }
 
-            try {
-              const { error } = await supabase.auth.resetPasswordForEmail(
-                email,
-                {
-                  redirectTo: window.location.origin,
-                }
-              );
-
-              if (error) throw error;
-
-              alert("E-mail de recuperação enviado!");
-            } catch (error) {
-              alert("Erro ao enviar recuperação: " + error.message);
-            }
-          }}
-        >
+        <Button fullWidth sx={{ mt: 1 }} onClick={handleResetPassword}>
           Esqueci minha senha
         </Button>
       </Paper>
