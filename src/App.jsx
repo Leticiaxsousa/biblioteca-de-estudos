@@ -4,17 +4,15 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ResetPassword from "./pages/ResetPassword";
-
 export default function App() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState("login");
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
         setView("dashboard");
-      }
+      } 
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -25,7 +23,6 @@ export default function App() {
       if (session?.user) {
         setUser(session.user);
         setView("dashboard");
-
         const id = session.user.id;
         const name = session.user.user_metadata?.name || session.user.email;
 
@@ -39,10 +36,9 @@ export default function App() {
           });
       } else {
         setUser(null);
-        setView("login");
+        setView(prev => (prev === "register" || prev === "reset-password" ? prev : "login"));
       }
     });
-
     const subscription = data?.subscription;
     return () => subscription?.unsubscribe();
   }, []);
@@ -54,23 +50,22 @@ export default function App() {
   };
 
   return (
-  <>
-    {!user && view !== "reset-password" && (
-      <Login onLogin={setUser} goTo={setView} />
-    )}
+    <>
+      {view === "login" && (
+        <Login onLogin={setUser} goTo={setView} />
+      )}
 
-    {view === "register" && (
-      <Register goTo={setView} />
-    )}
+      {view === "register" && (
+        <Register goTo={setView} />
+      )}
 
-    {view === "reset-password" && (
-      <ResetPassword goTo={setView} />
-    )}
+      {view === "reset-password" && (
+        <ResetPassword goTo={setView} />
+      )}
 
-    {user && view === "dashboard" && (
-      <Dashboard user={user} onLogout={handleLogout} />
-    )}
-  </>
-);
-
+      {user && view === "dashboard" && (
+        <Dashboard user={user} onLogout={handleLogout} />
+      )}
+    </>
+  );
 }
