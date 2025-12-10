@@ -122,7 +122,7 @@ export default function ContentCard({ content, onEdit, onDelete, onMarkComplete,
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <IconButton 
               size="small" 
-              onClick={handleMarkComplete}
+              onClick={handleMarkComplete }
               color={content.status === 'Concluído' ? 'success' : 'default'}
             >
               <CheckCircleIcon />

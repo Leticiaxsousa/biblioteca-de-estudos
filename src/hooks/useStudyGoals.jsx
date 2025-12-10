@@ -28,73 +28,94 @@ function endOfMonth(date) {
   e.setHours(23,59,59,999);
   return e;
 }
-
 export function useStudyGoals(userId, contents = []) {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const computeProgress = useCallback((goal) => {
     const now = new Date();
-
     if (goal.goal_type === 'weekly') {
       const s = startOfWeek(now);
       const e = endOfWeek(now);
       const done = contents
         .filter(c => c.status === 'Concluído')
         .filter(c => {
+          if (!c.created_at) return false;
           const created = new Date(c.created_at);
           return created >= s && created <= e;
         }).length;
-      const progress = Math.min(100, Math.round((done / (goal.target_value || 1)) * 100));
-      const remaining = Math.max(0, (goal.target_value || 1) - done);
-      return { ...goal, progress, current_value: done, remaining };
+
+      const target = goal.target_value || 1;
+
+      return {
+        ...goal,
+        progress: Math.min(100, Math.round((done / target) * 100)),
+        current_value: done,
+        remaining: Math.max(0, target - done)
+      };
     }
     if (goal.goal_type === 'monthly') {
       const s = startOfMonth(now);
       const e = endOfMonth(now);
+
       const done = contents
         .filter(c => c.status === 'Concluído')
         .filter(c => {
+          if (!c.created_at) return false;
           const created = new Date(c.created_at);
           return created >= s && created <= e;
         }).length;
-      const progress = Math.min(100, Math.round((done / (goal.target_value || 1)) * 100));
-      const remaining = Math.max(0, (goal.target_value || 1) - done);
-      return { ...goal, progress, current_value: done, remaining };
+      const target = goal.target_value || 1;
+      return {
+        ...goal,
+        progress: Math.min(100, Math.round((done / target) * 100)),
+        current_value: done,
+        remaining: Math.max(0, target - done)
+      };
     }
-
     if (goal.goal_type === 'content') {
       const content = contents.find(c => String(c.id) === String(goal.content_id));
       const completed = content && content.status === 'Concluído';
-      const progress = completed ? 100 : 0;
-      const daysRemaining = goal.due_date ? Math.max(0, Math.ceil((new Date(goal.due_date) - new Date()) / 86400000)) : null;
-      return { ...goal, progress, current_value: completed ? 1 : 0, remaining: completed ? 0 : 1, daysRemaining };
+
+      const due = goal.due_date ? new Date(goal.due_date) : null;
+      const daysRemaining = due
+        ? Math.max(0, Math.ceil((due - new Date()) / 86400000))
+        : null;
+
+      return {
+        ...goal,
+        progress: completed ? 100 : 0,
+        current_value: completed ? 1 : 0,
+        remaining: completed ? 0 : 1,
+        daysRemaining
+      };
     }
+    return {
+      ...goal,
+      progress: 0,
+      current_value: 0,
+      remaining: goal.target_value || 0
+    };
 
-    return { ...goal, progress: 0, current_value: 0, remaining: goal.target_value || 0 };
   }, [contents]);
-
   const fetchGoals = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
+
     try {
       const { data } = await studyGoalService.getAll(userId);
-      setGoals(data || []);
+      setGoals((data || []).map(g => computeProgress(g)));
     } catch {
       setGoals([]);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
-
+  }, [userId, computeProgress]);
   useEffect(() => {
-    setGoals(prev => prev.map(g => computeProgress(g)));
-  }, [contents, computeProgress]);
-
+    fetchGoals();
+  }, [contents, fetchGoals]);
   useEffect(() => {
     fetchGoals();
   }, [fetchGoals]);
-
   const addGoal = async (payload) => {
     try {
       const { data } = await studyGoalService.create({ ...payload, user_id: userId });
@@ -111,7 +132,9 @@ export function useStudyGoals(userId, contents = []) {
     try {
       const { data } = await studyGoalService.update(id, payload);
       if (data) {
-        setGoals(prev => prev.map(goal => goal.id === id ? computeProgress(data) : goal));
+        setGoals(prev => prev.map(goal =>
+          goal.id === id ? computeProgress(data) : goal
+        ));
       }
     } catch (error) {
       console.error('Erro ao atualizar meta:', error);
@@ -128,6 +151,12 @@ export function useStudyGoals(userId, contents = []) {
       throw error;
     }
   };
-
-  return { goals, loading, addGoal, updateGoal, deleteGoal, refetch: fetchGoals };
+  return {
+    goals,
+    loading,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    refetch: fetchGoals
+  };
 }

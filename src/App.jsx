@@ -54,12 +54,23 @@ export default function App() {
   };
 
   return (
-    <>
-      {view === "login" && <Login onLogin={setUser} goTo={setView} />}
-      {view === "register" && <Register goTo={setView} />}
-      {view === "dashboard" && user && <Dashboard user={user} onLogout={handleLogout} />}
-      {view === "dashboard" && !user && <Login onLogin={setUser} goTo={setView} />}
-      {view === "reset-password" && <ResetPassword goTo={setView} />}
-    </>
-  );
+  <>
+    {!user && view !== "reset-password" && (
+      <Login onLogin={setUser} goTo={setView} />
+    )}
+
+    {view === "register" && (
+      <Register goTo={setView} />
+    )}
+
+    {view === "reset-password" && (
+      <ResetPassword goTo={setView} />
+    )}
+
+    {user && view === "dashboard" && (
+      <Dashboard user={user} onLogout={handleLogout} />
+    )}
+  </>
+);
+
 }

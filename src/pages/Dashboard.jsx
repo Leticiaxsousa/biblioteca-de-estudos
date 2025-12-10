@@ -125,7 +125,7 @@ function ProgressChart({ contents }) {
     pending: contents.filter(c => c.status === 'Quero estudar').length
   };
 
-  const total = contents.length || 1;
+  const total = Math.max(contents.length, 1);
   const colors = ['#4caf50', '#ff9800', '#2196f3'];
   const labels = ['Concluídos', 'Em Andamento', 'Para Estudar'];
 
@@ -176,6 +176,7 @@ function PeriodProgress({ contents }) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const weeklyContents = contents.filter(content => {
+      if (!content.created_at) return false;
       const created = new Date(content.created_at);
       return created >= oneWeekAgo;
     });
@@ -191,7 +192,8 @@ function PeriodProgress({ contents }) {
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     
     const monthlyContents = contents.filter(content => {
-      const created = new Date(content.created_at);
+      if (!content.created_at) return false;
+       const created = new Date(content.created_at);
       return created >= oneMonthAgo;
     });
     const monthlyCompleted = monthlyContents.filter(c => c.status === 'Concluído').length;
@@ -298,6 +300,10 @@ export default function Dashboard({ user, onLogout }) {
   const handleContentSaved = () => {
     setShowContentForm(false);
     setSelectedContent(null);
+    refetchGoals();
+
+
+
 
   };
   const handleEditContent = (content) => {
@@ -449,7 +455,7 @@ export default function Dashboard({ user, onLogout }) {
                             {goal.progress || 0}%
                           </Typography>
                         </Box>
-                        {goal.target_date && (
+                        {goal.due_date && (
                           <Typography variant="caption" color="text.secondary">
                             {goal.daysRemaining === 0 ? 'Hoje' : 
                              goal.daysRemaining === 1 ? '1 dia' : 

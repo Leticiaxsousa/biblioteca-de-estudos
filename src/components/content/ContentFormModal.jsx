@@ -42,15 +42,14 @@ export default function ContentFormModal({
         status: initialContent.status || 'Quero estudar',
         difficulty: initialContent.difficulty || 'Fácil',
         notes: initialContent.notes || '',
-        topicIds: initialContent.topic_ids || []
+        
       });
     } else {
       setFormData({
         title: '',
         status: 'Quero estudar',
         difficulty: 'Fácil',
-        notes: '',
-        topicIds: []
+        notes: ''
       });
     }
   }, [initialContent, open]);
@@ -82,10 +81,6 @@ export default function ContentFormModal({
     }
   };
 
-  const handleTopicChange = (event) => {
-    const { value } = event.target;
-    setFormData(prev => ({ ...prev, topicIds: value }));
-  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

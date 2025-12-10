@@ -1,20 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 import { Box, Paper, TextField, Button, Typography } from "@mui/material";
 export default function ResetPassword({ goTo }) {
   const [password, setPassword] = useState("");
-  const handleReset = async () => {
-    const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      alert("Erro ao redefinir senha " + error.message);
+  const [accessToken, setAccessToken] = useState("");
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("access_token");
+    if (!token) {
+      alert("Solicite novamente a redefinição de senha.");
+      goTo("login");
       return;
     }
-
-    alert("Senha alterada com sucesso");
-    goTo("login");
+    setAccessToken(token);
+  }, [goTo]);
+  const handleReset = async () => {
+    if (!password) {
+      alert("Digite a nova senha.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(accessToken);
+      if (sessionError) {
+        alert("Erro ao criar sessão: " + sessionError.message);
+        setLoading(false);
+        return;
+      }
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        alert("Erro ao redefinir senha: " + updateError.message);
+        setLoading(false);
+        return;
+      }
+      alert("Senha alterada com sucesso!");
+      goTo("login");
+    } catch (err) {
+      alert("Erro inesperado: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <Box
       display="flex"
@@ -36,13 +63,15 @@ export default function ResetPassword({ goTo }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
         <Button
           fullWidth
           variant="contained"
           sx={{ mt: 2 }}
           onClick={handleReset}
+          disabled={loading}
         >
-          Salvar nova senha
+          {loading ? "Salvando..." : "Salvar nova senha"}
         </Button>
       </Paper>
     </Box>
